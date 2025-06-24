@@ -2,40 +2,33 @@ const sharp = require("sharp");
 const fs = require("fs");
 const path = require("path");
 
-const quality = 80;
-const folder = __dirname; // current folder
+const inputDir = path.join(__dirname, "input");
+const outputDir = path.join(__dirname, "output");
+const maxWidth = 3000;
+const maxHeight = 2000;
+const quality = 95;
 
-// Get all .jpg or .jpeg files
-const images = fs
-  .readdirSync(folder)
-  .filter(file => /\.(jpe?g)$/i.test(file));
-
-if (images.length === 0) {
-  console.log("❌ No JPG images found.");
-  process.exit(0);
+if (!fs.existsSync(outputDir)) {
+  fs.mkdirSync(outputDir);
 }
 
-// Async convert and delete
-(async () => {
-  for (const file of images) {
-    const inputPath = path.join(folder, file);
-    const baseName = path.parse(file).name;
-    const outputPath = path.join(folder, `${baseName}.webp`);
+const files = fs.readdirSync(inputDir).filter(file => file.toLowerCase().endsWith(".jpg"));
 
-    try {
-      console.log(`🔧 Converting ${file} to WebP...`);
+files.forEach((file, index) => {
+  const inputPath = path.join(inputDir, file);
+  const outputFileName = `${index + 1}.webp`; // Rename to 1.webp, 2.webp, ...
+  const outputPath = path.join(outputDir, outputFileName);
 
-      await sharp(inputPath)
-        .rotate() // correct EXIF orientation
-        .webp({ quality })
-        .toFile(outputPath);
-
-      fs.unlinkSync(inputPath); // delete original file
-      console.log(`✅ Saved ${outputPath} and deleted ${file}`);
-    } catch (err) {
-      console.error(`❌ Error converting ${file}:`, err.message);
-    }
-  }
-
-  console.log("\n🎉 All images converted to .webp and originals deleted.");
-})();
+  sharp(inputPath)
+    .rotate()
+    .resize({
+      width: maxWidth,
+      height: maxHeight,
+      fit: "inside",
+      withoutEnlargement: true
+    })
+    .webp({ quality })
+    .toFile(outputPath)
+    .then(() => console.log(`✅ Saved as ${outputFileName}`))
+    .catch(err => console.error(`❌ Error with ${file}:`, err));
+});
