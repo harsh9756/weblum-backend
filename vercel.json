@@ -1,8 +1,0 @@
-{
-  "rewrites": [
-    {
-      "source": "/images/:match*",
-      "destination": "/galleries/:match*"
-    }
-  ]
-}
